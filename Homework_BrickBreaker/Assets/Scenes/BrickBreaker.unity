@@ -738,6 +738,7 @@ MonoBehaviour:
   XSpeed: 3
   YSpeed: 3
   Ylimit: 4.74
+  Xlimit: 8.93
 --- !u!212 &1813347849
 SpriteRenderer:
   m_ObjectHideFlags: 0
