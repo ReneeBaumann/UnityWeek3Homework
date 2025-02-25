@@ -19,60 +19,65 @@ public class BallBehaviour : MonoBehaviour
     void Start()
     {
         _audioSource = GetComponent<AudioSource>();
+        
         ResetBall();  
     }
 
     void Update()
     {
-        //Up and down walls 
-        if (transform.position.y >= Ylimit)
+        if (GameBehaviour.Instance.State == Utilities.GamePlayState.Play)
         {
-            transform.position = new Vector3(
-                transform.position.x,
-                Mathf.Sign(transform.position.y) * Ylimit,
-                transform.position.z 
-            );
+            //Up and down walls 
+            if (transform.position.y >= Ylimit)
+            {
+                transform.position = new Vector3(
+                    transform.position.x,
+                    Mathf.Sign(transform.position.y) * Ylimit,
+                    transform.position.z 
+                );
 
-            _yDir *= -1;
+                _yDir *= -1;
+                
+                _audioSource.clip = _wallHit;
+                _audioSource.Play();
+            }
             
-            _audioSource.clip = _wallHit;
-            _audioSource.Play();
+            //Right and Left wall
+            if (Mathf.Abs(transform.position.x) >= Xlimit)
+            {
+                // Ensure the ball stays inside the X limit
+                transform.position = new Vector3(
+                    Mathf.Sign(transform.position.x) * Xlimit,
+                    transform.position.y,
+                    transform.position.z
+                );
+
+                // Reverse the direction along the X-axis to avoid it getting stuck
+                _xDir *= -1;
+                
+                _audioSource.clip = _wallHit;
+                _audioSource.Play();
+            }
+
+
+            if (BottomBoundary >= transform.position.y)
+            {
+                ResetBall();  
+            }
+
+            transform.position += new Vector3(_speed * _xDir, _speed * _yDir, 0) * Time.deltaTime;
         }
-        //Right and Left wall
-        // Right and Left wall
-        if (Mathf.Abs(transform.position.x) >= Xlimit)
-        {
-            // Ensure the ball stays inside the X limit
-            transform.position = new Vector3(
-                Mathf.Sign(transform.position.x) * Xlimit,
-                transform.position.y,
-                transform.position.z
-            );
-
-            // Reverse the direction along the X-axis to avoid it getting stuck
-            _xDir *= -1;
-            Debug.Log("X <hit");
-
-            _audioSource.clip = _wallHit;
-            _audioSource.Play();
-        }
-
-
-        if (BottomBoundary >= transform.position.y)
-        {
-            ResetBall();  
-        }
-
-        transform.position += new Vector3(_speed * _xDir, _speed * _yDir, 0) * Time.deltaTime;
     }
-
-    void ResetBall()
+    
+     void ResetBall()
     {
         transform.position = Vector3.zero; 
         _xDir = Random.value > 0.5f ? 1 : -1; 
         _yDir = Random.value > 0.5f ? 1 : -1; 
 
-        _speed = GameBehaviour.Instance.InitBallSpeed;  
+        _speed = GameBehaviour.Instance.InitBallSpeed; 
+        
+        GameBehaviour.Instance.Score = 0;
     }
 
     private void OnCollisionEnter2D(Collision2D other)
@@ -85,6 +90,19 @@ public class BallBehaviour : MonoBehaviour
 
         if (other.gameObject.CompareTag("Brick"))  
         {
+            float xDistance = Mathf.Abs(transform.position.x - other.gameObject.transform.position.x);
+            float yDistance = Mathf.Abs(transform.position.y - other.gameObject.transform.position.y);
+            
+            if (xDistance > yDistance)
+            {
+                _xDir *= -1;
+            }   
+            
+            if (yDistance > xDistance)
+            {
+                _yDir *= 1;
+            }  
+            
             _yDir *= -1;  
             
             Destroy(other.gameObject);  
@@ -92,6 +110,9 @@ public class BallBehaviour : MonoBehaviour
             
             _audioSource.clip = _paddleHit; 
             _audioSource.PlayOneShot(_score);
+
+            GameBehaviour.Instance.Score += 1;
+            
         }
     }
 }
